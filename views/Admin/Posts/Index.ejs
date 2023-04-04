@@ -1,0 +1,157 @@
+<%- include ("../Header.ejs") %>
+
+<div class="content" id="postsApp">
+    <div class="container">
+        <div class="page-title">
+            <h3>Posts</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 col-lg-12">
+                <div class="card">
+                	<div class="card-header">
+                		<a href="<%= mainURL %>/Admin/Posts/Create" class="btn btn-success">
+                			Add New
+                		</a>
+                	</div>
+
+                    <div class="card-body">
+                    	<table class="table table-hover" width="100%">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Image</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                <tr v-for="(post, index) in posts">
+                                    <td v-text="post.title"></td>
+                                    <td>
+                                        <img v-if="post.image != ''" style="width: 300px;" v-bind:src="mainURL + '/' + post.image" />
+                                    </td>
+                                    <td style="display: flex;">
+                                        <a v-bind:href="mainURL + '/Admin/Posts/Edit/' + post.slug" class="mtr-btn signup btn btn-sm btn-warning">
+                                            Edit
+                                        </a>
+
+                                        <form v-on:submit.prevent="doDeletePost" style="margin-left: 5px;">
+                                            <input type="hidden" required name="slug" v-bind:value="post.slug" />
+                                            <button class="mtr-btn signup btn btn-sm btn-danger" name="submit" type="submit">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="card-footer">
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination">
+                                <li v-for="(page, index) in pagination" class="page-item">
+                                    <a class="page-link" v-bind:href="'?page=' + page" v-text="page">1</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const postsApp = Vue.createApp({
+        data() {
+            return {
+                mainURL: mainURL,
+                posts: [],
+                paginations: [],
+                currentPage: 1
+            }
+        },
+
+        methods: {
+            doDeletePost: function () {
+                if (confirm("Are you sure you want to delete this post ?")) {
+                    const self = this;
+                    const form = event.target;
+
+                    form.submit.setAttribute("disabled", "disabled");
+                    form.submit.innerHTML = "Deleting...";
+
+                    var ajax = new XMLHttpRequest();
+                    ajax.open("POST", mainURL + "/Admin/Posts/Delete", true);
+
+                    ajax.onreadystatechange = function() {
+                        if (this.readyState == 4 && this.status == 200) {
+                            form.submit.removeAttribute("disabled");
+                            form.submit.innerHTML = "Delete";
+
+                            const response = JSON.parse(this.responseText);
+                            // console.log(response);
+
+                            if (response.status == "success") {
+                                for (let a = 0; a < self.posts.length; a++) {
+                                    if (self.posts[a].slug.toString() == form.slug.value) {
+                                        self.posts.splice(a, 1);
+                                        break;
+                                    }
+                                }
+                            } else {
+                                alert(response.message);
+                            }
+                        }
+                    };
+
+                    const formData = new FormData(form);
+                    formData.append("accessToken", localStorage.getItem("accessToken"));
+                    ajax.send(formData);
+                }
+            },
+
+            getData: function () {
+                const self = this;
+                var ajax = new XMLHttpRequest();
+                ajax.open("POST", mainURL + "/Admin/Posts/Fetch", true);
+
+                ajax.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+
+                        const response = JSON.parse(this.responseText);
+                        // console.log(response);
+
+                        if (response.status == "success") {
+                            self.posts = response.posts;
+                            self.pagination = JSON.parse(JSON.stringify(response.pagination));
+                        } else {
+                            alert(response.message);
+                        }
+                    }
+                };
+
+                const formData = new FormData();
+                formData.append("accessToken", localStorage.getItem("accessToken"));
+                formData.append("currentPage", this.currentPage);
+                ajax.send(formData);
+            }
+        },
+
+        mounted: function () {
+            const href = window.location.href;
+            const url = new URL(href);
+            let page = url.searchParams.get("page");
+            page = (page == null) ? 1 : page;
+            this.currentPage = page;
+
+            this.getData();
+        }
+    });
+
+    postsApp.mount("#postsApp");
+</script>
+
+<%- include ("../Footer.ejs") %>

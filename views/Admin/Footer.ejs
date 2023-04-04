@@ -1,0 +1,209 @@
+        </div>
+    </div>
+    <script src="/public/admin/vendor/jquery/jquery.min.js"></script>
+    <script src="/public/admin/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- <script src="/public/admin/vendor/chartsjs/Chart.min.js"></script> -->
+    <!-- <script src="/public/admin/js/dashboard-charts.js"></script> -->
+    <script src="/public/admin/vendor/datatables/datatables.min.js"></script>
+    <script src="/public/wysiwyg/jquery.richtext.min.js"></script>
+    <script src="/public/admin/js/script.js"></script>
+
+    <script>
+        // variables used in all files
+        var accessTokenKey = "accessToken";
+        var admin = null;
+
+        var downloadChunks = [];
+        var socketIO = io(mainURL);
+        
+        socketIO.on("download_chunk_received", function (data) {
+            downloadChunks.push(data);
+        });
+
+        var _appendBuffer = function(buffer1, buffer2) {
+            var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+            tmp.set(new Uint8Array(buffer1), 0);
+            tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+            return tmp.buffer;
+        };
+
+        socketIO.on("download_completed", function (data) {
+            // console.log(downloadChunks);
+            var arrayBuffer = new ArrayBuffer(0);
+            for (var a = 0; a < downloadChunks.length; a++) {
+                arrayBuffer = _appendBuffer(arrayBuffer, downloadChunks[a]);
+            }
+            // console.log(arrayBuffer);
+
+            var binary = '';
+            var bytes = new Uint8Array( arrayBuffer );
+            var len = bytes.byteLength;
+            for (var i = 0; i < len; i++) {
+                binary += String.fromCharCode( bytes[ i ] );
+            }
+            var base64 = window.btoa( binary );
+            
+            // var base64 = data.base64str;
+            base64 = "data:" + data.fileType + ";base64," + base64;
+            // console.log(base64);
+
+            // download the file
+            const fileName = data.fileName;
+            const link = document.createElement('a');
+            // Browsers that support HTML5 download attribute
+            if (link.download !== undefined) {
+                link.setAttribute("href", base64);
+                link.setAttribute('download', fileName);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            downloadChunks = [];
+        });
+
+        // get admin on page load
+        window.addEventListener("load", function () {
+            getAdmin();
+        });
+
+        // send the request to server to download the file
+        function downloadFile(self) {
+            var _id = self.getAttribute("data-id");
+            var userId = self.getAttribute("data-user-id");
+
+            var ajax = new XMLHttpRequest();
+            ajax.open("POST", document.getElementById("base-url").value + "/Admin/DownloadFile", true);
+
+            ajax.onreadystatechange = function () {
+                if (this.readyState == 4) {
+                    if (this.status == 200) {
+                        // console.log(this.responseText);
+                        var data = JSON.parse(this.responseText);
+                        // console.log(data);
+
+                        if (data.status == "error") {
+                            alert(data.message);
+                        }
+
+                        if (data.status == "success") {
+                            // 
+                        }
+                    }
+
+                    if (this.status == 500) {
+                        console.log(this.responseText);
+                    }
+                }
+            };
+
+            var formData = new FormData();
+            formData.append("accessToken", localStorage.getItem(accessTokenKey));
+            formData.append("_id", _id);
+            formData.append("userId", userId);
+            ajax.send(formData);
+        }
+    
+        function getAdmin() {
+    
+            // check if user is logged in
+            if (localStorage.getItem(accessTokenKey)) {
+    
+                // call AJAX to get user data
+                var ajax = new XMLHttpRequest();
+                ajax.open("POST", mainURL + "/Admin/Get", true);
+    
+                ajax.onreadystatechange = function () {
+                    if (this.readyState == 4) {
+                        if (this.status == 200) {
+                            // console.log(this.responseText);
+    
+                            var response = JSON.parse(this.responseText);
+                            if (response.status == "success") {
+                                // admin is logged in
+                                window.admin = response.admin;
+
+                                if (typeof onUsersPage !== "undefined" && onUsersPage) {
+                                    getUsers();
+                                }
+
+                                if (typeof onUserPostsPage !== "undefined" && onUserPostsPage) {
+                                    getUserPosts();
+                                }
+
+                                if (typeof onFodlerDetailPage !== "undefined" && onFodlerDetailPage) {
+                                    getFolderDetail();
+                                }
+                            } else {
+                                // admin is logged out
+                                localStorage.removeItem(accessTokenKey);
+                            }
+    
+                            showMainMenu();
+                        }
+    
+                        if (this.status == 500) {
+                            console.log(this.responseText);
+                        }
+                    }
+                };
+    
+                var formData = new FormData();
+                formData.append("accessToken", localStorage.getItem(accessTokenKey));
+                ajax.send(formData);
+    
+                return false;
+            }
+    
+            showMainMenu();
+        }
+    
+        function doLogout() {
+            // send beacon to server before redirecting
+            var formData = new FormData();
+            formData.append("accessToken", localStorage.getItem(accessTokenKey));
+    
+            navigator.sendBeacon(mainURL + "/Admin/Logout", formData);
+    
+            // remove access token from local storage
+            localStorage.removeItem(accessTokenKey);
+            return true;
+        }
+    
+        function showMainMenu() {
+            var html = "";
+            var htmlUserDropdown = "";
+    
+            // if admin is logged in
+            if (localStorage.getItem(accessTokenKey)) {
+                html += `<li>
+                    <a href="/Admin"><i class="fas fa-home"></i> Dashboard</a>
+                </li>
+
+                <li>
+                    <a href="/Admin/Users"><i class="fas fa-user-friends"></i> Users</a>
+                </li>
+
+                <li>
+                    <a href="/Admin/Posts"><i class="fab fa-blogger-b"></i> Posts</a>
+                </li>`;
+
+                document.getElementById("admin-name").innerHTML = window.admin.email;
+
+                htmlUserDropdown += `<li><a href="/Admin/Login" onclick='return doLogout();' class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Logout</a></li>`;
+            } else {
+                html += `<li>
+                    <a href='/Admin/Login'>Login</a>
+                </li>`;
+            }
+    
+            // show in main menu
+            document.getElementById("main-menu").innerHTML = html;
+
+            document.getElementById("user-dropdown").innerHTML = htmlUserDropdown;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,149 @@
+<%- include ("../Header.ejs") %>
+
+<div class="content" id="editPostApp">
+    <div class="container">
+        <div class="page-title">
+            <h3>Edit Post</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 col-lg-12">
+                <div class="card">
+                	<div class="card-body">
+                		<form v-on:submit.prevent="doEditPost" enctype="multipart/form-data">
+                			<input type="hidden" id="slug" name="slug" value="<%= slug %>" />
+
+                			<template v-if="post != null">
+                				<input type="hidden" name="_id" v-bind:value="post._id" />
+
+                				<div class="form-group">
+			                        <label>Title</label>
+			                        <input type="text" required name="title" v-bind:value="post.title" class="form-control" />
+			                    </div>
+
+			                    <div class="form-group">
+			                    	<img v-if="post.image != ''" v-bind:src="mainURL + '/' + post.image" style="width: 100%; margin-bottom: 10px;">
+
+			                        <label>Upload image</label>
+			                        <input type="file" name="image" accept="image/*" class="form-control" >
+			                    </div>
+
+			                    <div class="form-group">
+			                        <label>Content</label>
+			                        <textarea rows="10" required name="content" id="content" class="form-control" v-text="post.content"></textarea>
+			                    </div>
+
+			                    <div class="form-group">
+			                        <label>Categories</label>
+			                        <select multiple name="categories[]" id="categories" class="form-control">
+			                            <option value="Travel" :selected="isSelected('Travel')">Travel</option>
+			                            <option value="Gaming" :selected="isSelected('Gaming')">Gaming</option>
+			                            <option value="Entertainment" :selected="isSelected('Entertainment')">Entertainment</option>
+			                            <option value="Health" :selected="isSelected('Health')">Health</option>
+			                            <option value="Finance" :selected="isSelected('Finance')">Finance</option>
+			                            <option value="News" :selected="isSelected('News')">News</option>
+			                        </select>
+			                    </div>
+
+			                    <div class="submit-btns">
+			                        <button class="mtr-btn signup btn btn-success" name="submit" type="submit">
+			                            Edit post
+			                        </button>
+			                    </div>
+                			</template>
+		                </form>
+                	</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+	const editPostApp = Vue.createApp({
+		data() {
+			return {
+				mainURL: mainURL,
+				post: null
+			};
+		},
+
+		methods: {
+			doEditPost: function () {
+				const form = event.target;
+
+				form.submit.setAttribute("disabled", "disabled");
+		        form.submit.innerHTML = "Loading...";
+
+		        var ajax = new XMLHttpRequest();
+		        ajax.open("POST", mainURL + "/Admin/Posts/Edit/" + window.slug, true);
+
+		        ajax.onreadystatechange = function() {
+		            if (this.readyState == 4 && this.status == 200) {
+		                form.submit.removeAttribute("disabled");
+		                form.submit.innerHTML = "Edit post";
+
+		                var response = JSON.parse(this.responseText);
+		                alert(response.message);
+
+		                if (response.status == "success") {
+		                	// 
+		                }
+		            }
+		        };
+
+		        const categories = JSON.stringify($("#categories").val());
+
+		        const formData = new FormData(form);
+		        formData.append("categories", categories);
+		        formData.append("accessToken", localStorage.getItem("accessToken"));
+		        ajax.send(formData);
+			},
+
+			isSelected: function (category) {
+				for (let a = 0; a < this.post.categories.length; a++) {
+					if (this.post.categories[a] == category) {
+						return true;
+					}
+				}
+				return false;
+			},
+
+			getData: function () {
+				const self = this;
+		        window.slug = document.getElementById("slug").value;
+
+		        var ajax = new XMLHttpRequest();
+		        ajax.open("POST", mainURL + "/Admin/Posts/Detail", true);
+
+		        ajax.onreadystatechange = function() {
+		            if (this.readyState == 4 && this.status == 200) {
+		                var response = JSON.parse(this.responseText);
+		                if (response.status == "success") {
+		                	self.post = response.post;
+		                } else {
+		                    alert(response.message);
+		                }
+		            }
+		        };
+
+		        const formData = new FormData();
+		        formData.append("accessToken", localStorage.getItem("accessToken"));
+		        formData.append("slug", window.slug);
+		        ajax.send(formData);
+			}
+		},
+
+		mounted: function () {
+			this.getData();
+		}
+	});
+	editPostApp.mount("#editPostApp");
+
+	window.addEventListener("load", function () {
+		$("#content").richText();
+	});
+</script>
+
+<%- include ("../Footer.ejs") %>

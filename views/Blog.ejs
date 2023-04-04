@@ -1,0 +1,56 @@
+<%- include ("includes/header", {
+   "title": "Blog"
+}) %>
+
+<div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+    <%- include ("includes/ResponseAlert", {
+        "request": request
+    }) %>
+
+    <div class="row" style="margin-bottom: 50px;">
+        <div class="col-md-12">
+            <h1 class="text-center">Blog</h1>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <% posts.forEach(function (post) { %>
+            <div class="col-md-6">
+                <div class="card flex-md-row mb-4 box-shadow h-md-250">
+                    <div class="card-body d-flex flex-column align-items-start">
+                        <strong class="d-inline-block mb-2 text-primary"><%= post.categories %></strong>
+                        <h3 class="mb-0">
+                            <a class="text-dark" href="<%= mainURL + '/Blog/' + post.slug %>"><%= post.title %></a>
+                        </h3>
+                        <div class="mb-1 text-muted"><%= getDateInFormat(post.createdAt) %></div>
+                        <p class="card-text mb-auto" style="height: 45px;"></p>
+                        <a href="<%= mainURL + '/Blog/' + post.slug %>">Continue reading</a>
+                    </div>
+
+                    <% if (post.image != '') { %>
+                        <img class="card-img-right flex-auto d-none d-md-block" src="<%= mainURL + '/' + post.image %>" alt="<%= post.title %>" style="width: 200px; object-fit: cover;" />
+                    <% } %>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="Page navigation example">
+                <ul class="pagination">
+                    <% for (var a = 1; a <= pages; a++) { %>
+                        <li class="page-item <%= a == request.query.page ? 'active' : '' %>">
+                            <a class="page-link" href="?page=<%= a; %>">
+                                <%= a; %>                            
+                            </a>
+                        </li>
+                    <% } %>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    
+</div>
+
+<%- include ("includes/footer") %>

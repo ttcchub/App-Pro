@@ -1,0 +1,86 @@
+<%- include ("includes/header", {
+   "title": "Edit File"
+}) %>
+
+<div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+   <%- include ("includes/ResponseAlert", {
+      "request": request
+   }) %>
+
+   <div class="row">
+      <div class="col-md-12">
+         <h1>Edit File</h1>
+         <h4 style="margin-top: 50px;"><%= file.name %></h4>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-md-12">
+         <form method="POST" id="form-edit-file" action="/EditFile" onsubmit="return updateFile();">
+
+            <input type="hidden" name="_id" value="<%= file._id %>" required />
+
+            <div class="form-group">
+               <textarea class="form-control" rows="10" name="content" onkeyup="updateFile();"><%= file.content %></textarea>
+            </div>
+
+            <p id="edited-by" class="text-danger"></p>
+
+            <input type="submit" name="submit" value="Update File" class="btn btn-warning" />
+         </form>
+      </div>
+   </div>
+</div>
+
+<script>
+
+   var form = null;
+   window.addEventListener("load", function () {
+      form = document.getElementById("form-edit-file");
+
+      socketIO.on("file_updated", function (data) {
+         // console.log(data);
+         
+         document.getElementById("form-edit-file").content.value = data.content;
+         document.getElementById("edited-by").innerHTML = data.updatedBy.email + " is updating the file.";
+
+         setTimeout(function () {
+            document.getElementById("edited-by").innerHTML = "";
+         }, 3000);
+      });
+   });
+
+   function updateFile() {
+
+      // form.submit.setAttribute("value", "Updating...");
+      // form.submit.setAttribute("disabled", "disabled");
+
+      var ajax = new XMLHttpRequest();
+      ajax.open("POST", form.getAttribute("action"), true);
+
+      ajax.onreadystatechange = function () {
+         if (this.readyState == 4) {
+            if (this.status == 200) {
+               // console.log(this.responseText);
+               var data = JSON.parse(this.responseText);
+               // console.log(data);
+
+               // form.submit.removeAttribute("disabled");
+               // form.submit.setAttribute("value", "Update File");
+
+               // swal("", data.message, data.status);
+            }
+
+            if (this.status == 500) {
+               console.log(this.responseText);
+            }
+         }
+      };
+
+      var formData = new FormData(form);
+      ajax.send(formData);
+      return false;
+   }
+</script>
+
+<%- include ("includes/footer") %>

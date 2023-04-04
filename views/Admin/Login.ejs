@@ -1,0 +1,118 @@
+<!doctype html>
+<!-- 
+* Bootstrap Simple Admin Template
+* Version: 2.0
+* Author: Alexis Luna
+* Copyright 2020 Alexis Luna
+* Website: https://github.com/alexis-luna/bootstrap-simple-admin-template
+-->
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Login | Bootstrap Simple Admin Template</title>
+    <link href="/public/admin/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/public/admin/css/auth.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="wrapper">
+        <div class="auth-content">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <img class="brand" src="/public/admin/img/bootstraper-logo.png" alt="bootstraper logo">
+                    </div>
+                    <h6 class="mb-4 text-muted">Login to your account</h6>
+                    <form onsubmit="return doLogin(this);">
+                        <div class="form-group text-left">
+                            <label for="email">Email adress</label>
+                            <input type="email" name="email" class="form-control" placeholder="Enter Email" required>
+                        </div>
+                        <div class="form-group text-left">
+                            <label for="password">Password</label>
+                            <input type="password" name="password" class="form-control" placeholder="Password" required>
+                        </div>
+                        <button type="submit" name="submit" class="btn btn-primary shadow-2 mb-4">Login</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/public/admin/vendor/jquery/jquery.min.js"></script>
+    <script src="/public/admin/vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    <script>
+        function doLogin(form) {
+ 
+            // disable the submit button and show "Loading..." text
+            form.submit.setAttribute("disabled", "disabled");
+            form.submit.value = "Loading...";
+    
+            // create AJAX object
+            var ajax = new XMLHttpRequest();
+    
+            // 1. method is POST
+            // 2. path where request will be sent
+            // 3. request will be asynchronous
+            ajax.open("POST", "/Admin/Login", true);
+    
+            // called everytime status of request changes
+            ajax.onreadystatechange = function () {
+    
+                // when response is received from server
+                if (this.readyState == 4) {
+    
+                    // if the request is OK
+                    if (this.status == 200) {
+    
+                        // response received from server
+                        // console.log(this.responseText);
+    
+                        // enable the submit button
+                        form.submit.removeAttribute("disabled");
+                        form.submit.value = "Login";
+    
+                        // convert the JSON string into Javascript object
+                        var response = JSON.parse(this.responseText);
+    
+                        // if user is logged in successfully
+                        if (response.status == "success") {
+    
+                            // get access token from server
+                            var accessToken = response.accessToken;
+    
+                            // save in local storage
+                            localStorage.setItem("accessToken", accessToken);
+    
+                            // redirect to home page
+                            window.location.href = "/Admin";
+                        } else {
+    
+                            // display message
+                            alert(response.message);
+                        }
+                    }
+    
+                    // if there is an internal server error
+                    if (this.status == 500) {
+                        console.log(this.responseText);
+                    }
+                }
+            };
+    
+            // create form data object from form
+            var formData = new FormData(form);
+    
+            // actually sending the AJAX request
+            ajax.send(formData);
+    
+            // prevent the form from submitting
+            return false;
+        }
+    </script>
+</body>
+
+</html>

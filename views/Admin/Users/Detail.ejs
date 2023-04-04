@@ -1,0 +1,92 @@
+<%- include ("../Header.ejs") %>
+
+<div class="content">
+    <div class="container">
+        <div class="page-title">
+            <h3 id="user-email"></h3>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 col-lg-12">
+                <div class="card">
+
+                    <div class="card-header">
+                        Uploaded
+                    </div>
+
+                    <div class="card-body">
+                        <table class="table table-hover" id="dataTables" width="100%">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="user-id" value="<%= _id %>" />
+
+<script>
+    var onUserPostsPage = true;
+
+    function getUserPosts() {
+        // call AJAX to get user data
+        var ajax = new XMLHttpRequest();
+        ajax.open("POST", mainURL + "/Admin/Users/GetDetail", true);
+
+        ajax.onreadystatechange = function () {
+            if (this.readyState == 4) {
+                if (this.status == 200) {
+                    // console.log(this.responseText);
+
+                    var response = JSON.parse(this.responseText);
+                    if (response.status == "success") {
+                        var table = $('#dataTables').DataTable({
+                            responsive: true,
+                            pageLength: 20,
+                            lengthChange: false,
+                            searching: true,
+                            ordering: true
+                        });
+
+                        socketIO.emit("logged_in", localStorage.getItem(accessTokenKey));
+                        document.getElementById("user-email").innerHTML = response.user.email;
+
+                        for (var a = 0; a < response.user.uploaded.length; a++) {
+                            // console.log(response.users[a]);
+                            var uploaded = response.user.uploaded[a];
+                            table.row.add( [
+                                uploaded.type == "folder" ? "<a href='/Admin/FolderDetail/" + uploaded._id + "/" + response.user._id + "' class='btn btn-link'>" + uploaded._id + "</a>" : "<a href='javascript:void(0);' onclick='downloadFile(this);' data-id='" + uploaded._id + "' data-user-id='" + response.user._id + "' class='btn btn-link'>" + uploaded._id + "</a>",
+                                uploaded.name ?? uploaded.folderName,
+                                uploaded.type,
+                                uploaded.createdAt
+                            ] ).draw( false );
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                }
+
+                if (this.status == 500) {
+                    console.log(this.responseText);
+                }
+            }
+        };
+
+        var formData = new FormData();
+        formData.append("accessToken", localStorage.getItem(accessTokenKey));
+        formData.append("_id", document.getElementById("user-id").value);
+        ajax.send(formData);
+    }
+</script>
+
+<%- include ("../Footer.ejs") %>

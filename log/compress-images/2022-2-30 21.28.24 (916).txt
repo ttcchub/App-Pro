@@ -1,0 +1,8 @@
+File from: [uploads/1648657704817-IMG_0025-min.png]
+
+File to: [public/uploads/adnan@gmail.com/Personal/1648657704817-IMG_0025-min.png]
+
+Compression algorithm: [pngquant]
+
+Description: Error: Command failed: /Users/adnan/Documents/Projects/file-transfer-web-app-nodejs-mongodb/premium-file-transfer-web-app-nodejs-mongodb/node_modules/pngquant-bin/vendor/pngquant -quality 100 uploads/1648657704817-IMG_0025-min.png
+Unrecognized option: 'u'

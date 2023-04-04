@@ -1,0 +1,93 @@
+<%- include ("../Header.ejs") %>
+
+<div class="content">
+    <div class="container">
+        <div class="page-title">
+            <h3>Add New Post</h3>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12 col-lg-12">
+                <div class="card">
+                	<div class="card-body">
+                		<form onsubmit="doAddPost();" enctype="multipart/form-data">
+		                    <div class="form-group">
+		                        <label>Title</label>
+		                        <input type="text" required name="title" class="form-control" />
+		                    </div>
+
+		                    <div class="form-group">
+		                        <label>Upload image</label>
+		                        <input type="file" name="image" accept="image/*" class="form-control" >
+		                    </div>
+
+		                    <div class="form-group">
+		                        <label>Content</label>
+		                        <textarea rows="10" required name="content" id="content" class="form-control"></textarea>
+		                    </div>
+
+		                    <div class="form-group">
+		                        <label>Categories</label>
+		                        <select multiple name="categories[]" id="categories" class="form-control">
+		                            <option value="Travel">Travel</option>
+		                            <option value="Gaming">Gaming</option>
+		                            <option value="Entertainment">Entertainment</option>
+		                            <option value="Health">Health</option>
+		                            <option value="Finance">Finance</option>
+		                            <option value="News">News</option>
+		                        </select>
+		                    </div>
+
+		                    <div class="submit-btns">
+		                        <button class="mtr-btn signup btn btn-success" name="submit" type="submit">
+		                            Add post
+		                        </button>
+		                    </div>
+		                </form>
+                	</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    window.addEventListener("load", function () {
+        $("#content").richText();
+    });
+
+    function doAddPost() {
+        event.preventDefault();
+        const form = event.target;
+
+        form.submit.setAttribute("disabled", "disabled");
+        form.submit.innerHTML = "<span>Loading...</span>";
+
+        var ajax = new XMLHttpRequest();
+        ajax.open("POST", mainURL + "/Admin/Posts/Create", true);
+
+        ajax.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200) {
+                form.submit.removeAttribute("disabled");
+                form.submit.innerHTML = "Add post";
+
+                var response = JSON.parse(this.responseText);
+                alert(response.message);
+
+                if (response.status == "success") {
+                	// 
+                }
+            }
+        };
+
+        const categories = JSON.stringify($("#categories").val());
+
+        const formData = new FormData(form);
+        formData.append("categories", categories);
+        formData.append("accessToken", localStorage.getItem("accessToken"));
+        ajax.send(formData);
+    }
+</script>
+
+<%- include ("../Footer.ejs") %>

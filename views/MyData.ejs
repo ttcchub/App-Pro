@@ -1,0 +1,402 @@
+<%- include ("includes/header", {
+   "title": "My Data"
+}) %>
+
+<div class="container" style="margin-top: 50px; margin-bottom: 50px;">
+    <%- include ("includes/ResponseAlert", {
+        "request": request
+    }) %>
+
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h1>My Data</h1>
+
+            <progress value="<%= totalUploaded %>" max="<%= totalUploaded + remainingData %>"></progress>
+
+            <% if (totalUploaded == 0) { %>
+                <span>100</span>
+            <% } else { %>
+                <span><%= Math.floor((totalUploaded / (totalUploaded + remainingData)) * 100) %>%</span>
+            <% } %>
+
+            <p><%= formatBytes(totalUploaded) %> uploaded</p>
+            <p><%= formatBytes(remainingData) %> remaining</p>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top: 50px; margin-bottom: 50px;">
+        <div class="col-md-12 text-center">
+            <h2>Increase your data ($1 / GB)</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+
+            <h2 class="text-center">Billing Information</h2>
+
+            <!-- billing details -->
+            <form id="form-billing-details">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input name="name" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="number" min="0" name="phone" required class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>City</label>
+                            <input name="city" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input name="country" required class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>State</label>
+                            <input name="state" required class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Line 1</label>
+                            <textarea name="line1" required class="form-control"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Line 2</label>
+                            <textarea name="line2" required class="form-control"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Postal code</label>
+                            <input type="number" min="0" name="postal_code" required class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h2>Stripe</h2> <br />
+
+            <div id="stripe-card-element"></div> <br />
+
+            <button type="button" class="btn btn-success" onclick="payViaStripe(this);">
+                Pay via Stripe
+                <i class="fa fa-spinner fa-spin" style="display: none;"></i>
+            </button>
+
+            <input type="hidden" id="stripe-public-key" value="<%= stripePublicKey %>" />
+            <input type="hidden" id="stripe-payment-intent" value="<%= paymentIntent.client_secret %>" />
+
+            <script>
+                // global variables 
+                var stripe = null;
+                var cardElement = null;
+
+                var stripePublicKey = "";
+
+                // initialize stripe when page loads 
+                window.addEventListener("load", async function () {
+                    stripePublicKey = document.getElementById("stripe-public-key").value;
+
+                    stripe = Stripe(stripePublicKey);
+                    var elements = stripe.elements();
+                    cardElement = elements.create('card');
+                    cardElement.mount('#stripe-card-element');
+                });
+
+                /* this function will be called when the "Pay now" button is pressed */
+                function payViaStripe(self) {
+
+                    /* display the loader */
+                    self.querySelector(".fa-spinner").style.display = "";
+
+                    /* get stripe payment intent */
+                    const stripePaymentIntent = document.getElementById("stripe-payment-intent").value;
+
+                    /* get billing detail form values for stripe payment method */
+                    var billingDetailForm = document.getElementById("form-billing-details");
+            
+                    /* execute the payment */
+                    stripe
+                        .confirmCardPayment(stripePaymentIntent, {
+                            payment_method: {
+                                    card: cardElement,
+                                    billing_details: {
+                                        "address": {
+                                            "city": billingDetailForm.city.value,
+                                            "country": billingDetailForm.country.value,
+                                            "line1": billingDetailForm.line1.value,
+                                            "line2": billingDetailForm.line2.value,
+                                            "postal_code": billingDetailForm.postal_code.value,
+                                            "state": billingDetailForm.state.value
+                                        },
+                                        "email": billingDetailForm.email.value,
+                                        "name": billingDetailForm.name.value,
+                                        "phone": billingDetailForm.phone.value
+                                    },
+                                },
+                            })
+                            .then(function(result) {
+
+                                // Handle result.error or result.paymentIntent
+                                if (result.error) {
+                                    console.log(result.error);
+                                    swal("Error", result.error.message, "error");
+                                    // Display "error.message" to the user...
+
+                                    self.querySelector(".fa-spinner").style.display = "none";
+                                } else {
+                                    console.log("The card has been verified successfully...", result.paymentIntent);
+                                    swal("Success", "Payment has been made.", "success");
+                                    self.querySelector(".fa-spinner").style.display = "none";
+
+                                    /* you can use the result.paymentIntent object for saving
+                                        in database if you want */
+
+                                    /* redirect the user to home page */
+                                    // window.location.href = "index.php";
+
+                                    var ajax = new XMLHttpRequest();
+                                    ajax.open("POST", document.getElementById("base-url").value + "/IncreaseData", true);
+
+                                    ajax.onreadystatechange = function () {
+                                        if (this.readyState == 4) {
+                                            if (this.status == 200) {
+                                                // console.log(this.responseText);
+                                                var data = JSON.parse(this.responseText);
+                                                // console.log(data);
+
+                                                // self.removeAttribute("disabled");
+                                                // self.innerHTML = "Download";
+
+                                                if (data.status == "error") {
+                                                    swal("Error", data.message, "error");
+                                                }
+
+                                                if (data.status == "success") {
+                                                    window.location.reload();
+                                                }
+                                            }
+
+                                            if (this.status == 500) {
+                                                console.log(this.responseText);
+                                            }
+                                        }
+                                    };
+
+                                    var formData = new FormData();
+                                    formData.append("payment_intent_id", result.paymentIntent.id);
+                                    ajax.send(formData);
+                                }
+                            });
+                }
+            </script>
+        </div>
+
+        <div class="col-md-6">
+            <h2>PayPal</h2>
+
+            <!-- paypal button will be rendered here using Javascript -->
+            <div id="btn-paypal-checkout" style="margin-top: 20px;"></div>
+            <div id="paypal-button-container" style="width: 100% !important;"></div>
+
+            <input type="hidden" id="paypalClientID" value="<%= paypalClientID %>" />
+            <input type="hidden" id="paypalClientIDProduction" value="<%= paypalClientIDProduction %>" />
+            <input type="hidden" id="paypalClientSecret" value="<%= paypalClientSecret %>" />
+
+            <script>
+                /* global variables that will be received from PayPal
+                when payment succeeds */
+                var intent = "",
+                    orderID = "",
+                    payerID = "",
+                    paymentID = "",
+                    paymentToken = "";
+
+                var paypalClientID = "",
+                    paypalClientIDProduction = "",
+                    paypalClientSecret = "";
+
+                window.addEventListener("load", function () {
+
+                    paypalClientID = document.getElementById("paypalClientID").value;
+                    paypalClientIDProduction = document.getElementById("paypalClientIDProduction").value;
+                    paypalClientSecret = document.getElementById("paypalClientSecret").value;
+
+                    /* cookieItems array will be used for PayPal because it uses
+                        a specific format of data */
+                    var cookieItems = [];
+
+                    /* fill the cookieItems array with cart items */
+                    cookieItems.push({
+                        name: "Increase data",
+                        description: "Increase data",
+                        quantity: 1,
+                        price: 1,
+                        sku: "123",
+                        currency: "USD"
+                    });
+
+                    // Render the PayPal button
+                    paypal.Button.render({
+
+                        // Set your environment
+                        env: 'sandbox', // sandbox | production
+
+                        // Specify the style of the button
+                        style: {
+                            label: 'checkout',
+                            size: 'medium', // small | medium | large | responsive
+                            shape: 'pill', // pill | rect
+                            color: 'gold', // gold | blue | silver | black,
+                            layout: 'vertical'
+                        },
+
+                        // PayPal Client IDs - replace with your own
+                        // Create a PayPal app: https://developer.paypal.com/developer/applications/create
+
+                        client: {
+                            sandbox: paypalClientID,
+                            production: paypalClientIDProduction
+                        },
+
+                        funding: {
+                            allowed: [
+                                paypal.FUNDING.CARD,
+                                paypal.FUNDING.ELV
+                            ]
+                        },
+
+                        payment: function(data, actions) {
+                            return actions.payment.create({
+                                payment: {
+                                    transactions: [{
+                                        amount: {
+                                            /* get grand total from hidden input field */
+                                            total: 1,
+                                            currency: 'USD'
+                                        },
+                                        item_list: {
+                                            /* custom cookieItems array created specifically
+                                                for PayPal */
+                                            items: cookieItems
+                                        }
+                                    }]
+                                }
+                            });
+                        },
+
+                        onAuthorize: function(data, actions) {
+                            return actions.payment.execute().then(function() {
+                                /*console.log({
+                                    method: "onAuthorize",
+                                    data: data,
+                                    actions: actions
+                                });*/
+
+                                /* you can use all the values received from PayPal
+                                    as you want */
+                                intent = data.intent;
+                                orderID = data.orderID;
+                                payerID = data.payerID;
+                                paymentID = data.paymentID;
+                                paymentToken = data.paymentToken;
+
+                                console.log({
+                                    "intent": intent,
+                                    "orderID": orderID,
+                                    "payerID": payerID,
+                                    "paymentID": paymentID,
+                                    "paymentToken": paymentToken,
+                                });
+
+                                swal("Success", "Payment has been made.", "success");
+
+                                var ajax = new XMLHttpRequest();
+                                ajax.open("POST", document.getElementById("base-url").value + "/IncreaseDataPayPal", true);
+
+                                ajax.onreadystatechange = function () {
+                                    if (this.readyState == 4) {
+                                        if (this.status == 200) {
+                                            // console.log(this.responseText);
+                                            var data = JSON.parse(this.responseText);
+                                            // console.log(data);
+
+                                            // self.removeAttribute("disabled");
+                                            // self.innerHTML = "Download";
+
+                                            if (data.status == "error") {
+                                                swal("Error", data.message, "error");
+                                            }
+
+                                            if (data.status == "success") {
+                                                window.location.reload();
+                                            }
+                                        }
+
+                                        if (this.status == 500) {
+                                            console.log(this.responseText);
+                                        }
+                                    }
+                                };
+
+                                var formData = new FormData();
+                                formData.append("paymentID", paymentID);
+                                formData.append("payerID", payerID);
+                                ajax.send(formData);
+                            });
+                        },
+                        
+                        onCancel: function (data, actions) {
+                            // Show a cancel page or return to cart
+                            console.log({
+                                method: "onCancel",
+                                data: data,
+                                actions: actions
+                            });
+                        }
+
+                    }, '#btn-paypal-checkout');
+                });
+            </script>
+        </div>
+    </div>
+</div>
+
+<%- include ("includes/footer") %>

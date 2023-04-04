@@ -1,0 +1,8 @@
+File from: [public/uploads/adnan@gmail.com/1648607470311-IMG_2765.jpg]
+
+File to: [/1648607470311-IMG_2765.jpg]
+
+Compression algorithm: [mozjpeg]
+
+Description: Error: Command failed: /Users/adnan/Documents/Projects/file-transfer-web-app-nodejs-mongodb/premium-file-transfer-web-app-nodejs-mongodb/node_modules/compress-images/node_modules/mozjpeg/vendor/cjpeg -quality 30 -outfile /1648607470311-IMG_2765.jpg public/uploads/adnan@gmail.com/1648607470311-IMG_2765.jpg
+/Users/adnan/Documents/Projects/file-transfer-web-app-nodejs-mongodb/premium-file-transfer-web-app-nodejs-mongodb/node_modules/compress-images/node_modules/mozjpeg/vendor/cjpeg: can't open /1648607470311-IMG_2765.jpg

@@ -1,0 +1,25 @@
+- Download and Install Node JS and Mongo DB
+
+- Start Mongo DB server by running the following command in "bin" folder where Mongo DB is installed:
+    > ./mongod
+    or
+    > mongod
+
+- Then open command prompt in this folder and run the following command:
+    > npm update
+    > npm install -g nodemon
+    > nodemon server.js
+
+- Then open your browser and enter the following address:
+    > http://localhost:4000/
+
+- Enter your real Gmail ID and password in "server.js" variable "nodemailerObject" inside "auth" object. It will be used for sending emails.
+
+- Enable "less secure apps" for the Gmail account from this link: https://myaccount.google.com/lesssecureapps
+
+- To accept payments:
+    1) Create a PayPal business account and create a sandbox app from PayPal developer dashboard.
+        1.1) Enter your client ID and client secret in "server.js" variables "paypalClientID" and "paypalClientSecret" respsectively.
+    2) Or create a Stripe account and enter secret and public key in "server.js" variables "stripeSecretKey" and "stripePublicKey" respectively.
+
+If you face any problem, please feel free to contact us.
